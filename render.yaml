@@ -1,0 +1,9 @@
+services:
+  - type: worker
+    name: diskwala-premium-bot
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python bot.py
+    envVars:
+      - key: BOT_TOKEN
+        value: YOUR_BOT_TOKEN

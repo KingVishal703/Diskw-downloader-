@@ -6,6 +6,6 @@ services:
     startCommand: python bot.py
     envVars:
       - key: BOT_TOKEN
-        value: YOUR_BOT_TOKEN_HERE
+        value: 7648577586:AAG10G2khDJyFiQtwhVT7fyhjjo_AX8jFeI
       - key: ADMIN_USER_ID
         value: 5654093580

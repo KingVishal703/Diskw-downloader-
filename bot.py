@@ -22,13 +22,13 @@ from telegram.ext import (
 import os
 
 # ---- FIXED BOT TOKEN ----
-BOT_TOKEN = os.environ.get("BOT_TOKEN")  # IMPORTANT: Set BOT_TOKEN in environment
+BOT_TOKEN = os.environ.get("7648577586:AAG10G2khDJyFiQtwhVT7fyhjjo_AX8jFeI")  # IMPORTANT: Set BOT_TOKEN in environment
 
 # ---- FIXED ADMIN ID ----
 try:
-    ADMIN_USER_ID = int(os.environ.get("ADMIN_USER_ID", "5640295091"))
+    ADMIN_USER_ID = int(os.environ.get("ADMIN_USER_ID", "5654093580"))
 except ValueError:
-    ADMIN_USER_ID = 5640295091
+    ADMIN_USER_ID = 5654093580
 
 PREMIUM_FILE = "premium_users.json"
 USAGE_FILE = "usage_tracker.json"

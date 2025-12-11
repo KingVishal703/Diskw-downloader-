@@ -20,7 +20,7 @@ from telegram.ext import (
 
 # === CONFIG ===
 import os
-BOT_TOKEN = os.environ.get("BOT_TOKEN")
+BOT_TOKEN = os.environ.get("7614452604:AAEUpLVH3uh7RgKJnZOuOHLuZv-YMzG_Q2g")
 ADMIN_USER_ID = 5640295091  # Replace with your Telegram ID
 PREMIUM_FILE = "premium_users.json"
 USAGE_FILE = "usage_tracker.json"

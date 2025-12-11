@@ -22,7 +22,7 @@ from telegram.ext import (
 import os
 
 # ---- FIXED BOT TOKEN ----
-BOT_TOKEN = os.environ.get("7648577586:AAG10G2khDJyFiQtwhVT7fyhjjo_AX8jFeI")  # IMPORTANT: Set BOT_TOKEN in environment
+BOT_TOKEN = os.environ.get("BOT_TOKEN")  # IMPORTANT: Set BOT_TOKEN in environment
 
 # ---- FIXED ADMIN ID ----
 try:

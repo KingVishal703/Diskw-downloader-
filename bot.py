@@ -20,8 +20,16 @@ from telegram.ext import (
 
 # === CONFIG ===
 import os
-BOT_TOKEN = os.environ.get("7648577586:AAG10G2khDJyFiQtwhVT7fyhjjo_AX8jFeI")
-ADMIN_USER_ID = 5640295091  # Replace with your Telegram ID
+
+# ---- FIXED BOT TOKEN ----
+BOT_TOKEN = os.environ.get("BOT_TOKEN")  # IMPORTANT: Set BOT_TOKEN in environment
+
+# ---- FIXED ADMIN ID ----
+try:
+    ADMIN_USER_ID = int(os.environ.get("ADMIN_USER_ID", "5640295091"))
+except ValueError:
+    ADMIN_USER_ID = 5640295091
+
 PREMIUM_FILE = "premium_users.json"
 USAGE_FILE = "usage_tracker.json"
 QR_IMAGE_PATH = "qr.png"
@@ -31,17 +39,48 @@ UPI_ID = "xyzxyzxyz.@ibl"
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# === TOKEN VALIDATION ===
+import sys, re
+from telegram import Bot as TgBot
+
+def looks_like_token(t):
+    return bool(t and re.match(r"^\d{6,20}:[A-Za-z0-9_-]{35,}$", t.strip()))
+
+if not BOT_TOKEN:
+    print("ERROR: BOT_TOKEN environment variable not set. Set BOT_TOKEN and restart.")
+    sys.exit(1)
+
+if not looks_like_token(BOT_TOKEN):
+    print("ERROR: BOT_TOKEN invalid. Check for extra spaces/quotes or get new token from BotFather.")
+    print("TOKEN repr:", repr(BOT_TOKEN))
+    sys.exit(1)
+
+try:
+    TgBot(BOT_TOKEN)
+except Exception as e:
+    print("ERROR: Telegram rejected your token:", e)
+    sys.exit(1)
+
 # === PREMIUM MANAGEMENT ===
 def load_json(file):
     try:
         with open(file, "r") as f:
             return json.load(f)
-    except:
+    except FileNotFoundError:
+        return {}
+    except json.JSONDecodeError:
+        logger.warning(f"Corrupt JSON in {file}, resetting.")
+        return {}
+    except Exception:
+        logger.exception(f"Unexpected error reading {file}")
         return {}
 
 def save_json(file, data):
-    with open(file, "w") as f:
-        json.dump(data, f)
+    try:
+        with open(file, "w") as f:
+            json.dump(data, f)
+    except Exception:
+        logger.exception(f"Failed to write {file}")
 
 def is_premium(user_id):
     users = load_json(PREMIUM_FILE)
@@ -82,15 +121,15 @@ def get_direct_link(url):
             if source and source.get("src"):
                 return source["src"]
         return None
-    except Exception as e:
-        logger.error(f"Error: {e}")
+    except Exception:
+        logger.exception("Error extracting video link")
         return None
 
 # === HANDLERS ===
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     buttons = [[InlineKeyboardButton("💎 Buy Premium", callback_data="buy_premium")]]
     await update.message.reply_text(
-        "👋 Welcome! Send me a Diskwala link to get the video.\n\nFree users = 1 video / 24 hours.\nPremium = unlimited access!",
+        "👋 Welcome! Send me a Diskwala link.\n\nFree = 1 video / 24 hrs.\nPremium = Unlimited!",
         reply_markup=InlineKeyboardMarkup(buttons),
     )
 
@@ -102,14 +141,11 @@ async def handle_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Please send a valid Diskwala link.")
         return
 
-    if is_premium(user_id):
-        allowed = True
-    else:
-        allowed = can_use_free(user_id)
+    allowed = is_premium(user_id) or can_use_free(user_id)
 
     if not allowed:
         await update.message.reply_text(
-            "⚠️ Free users can only convert 1 video every 24 hours.\n\nUpgrade to premium for unlimited access.",
+            "⚠️ Only 1 free video every 24 hours.\nUpgrade to premium for unlimited!",
             reply_markup=InlineKeyboardMarkup(
                 [[InlineKeyboardButton("💎 Buy Premium", callback_data="buy_premium")]]
             )
@@ -119,6 +155,7 @@ async def handle_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("🔄 Processing your link...")
 
     direct_link = get_direct_link(text)
+
     if direct_link:
         try:
             await update.message.reply_video(video=direct_link)
@@ -127,7 +164,7 @@ async def handle_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not is_premium(user_id):
             update_usage(user_id)
     else:
-        await update.message.reply_text("❌ Failed to extract video from link.")
+        await update.message.reply_text("❌ Failed to extract video.")
 
 async def add_premium_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message.from_user.id != ADMIN_USER_ID:
@@ -135,12 +172,17 @@ async def add_premium_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     try:
+        if len(context.args) < 2:
+            raise ValueError("Missing arguments")
         target_id = int(context.args[0])
         days = int(context.args[1])
         add_premium(target_id, days)
-        await update.message.reply_text(f"✅ User {target_id} upgraded for {days} days.")
-    except:
+        await update.message.reply_text(f"✅ Upgraded {target_id} for {days} days.")
+    except ValueError:
         await update.message.reply_text("❌ Usage: /addpremium <user_id> <days>")
+    except Exception:
+        logger.exception("Premium command failed")
+        await update.message.reply_text("❌ Error occurred.")
 
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -153,10 +195,9 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "• 7 Days = ₹15\n"
                 "• 30 Days = ₹60\n"
                 "• 3 Months = ₹150\n"
-                "• Lifetime = Contact To Admin @Who_I_AM02\n\n"
-                f"📲 Pay via UPI: `{UPI_ID}`\n"
-                "After payment, send screenshot to admin to activate premium.\n\n"
-                "👨‍💼 @Who_I_AM02"
+                "• Lifetime = Contact Admin\n\n"
+                f"📲 UPI: `{UPI_ID}`\n"
+                "Send screenshot to admin after payment."
             ),
             parse_mode="Markdown"
         )

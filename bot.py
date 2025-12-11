@@ -25,12 +25,12 @@ from telegram.ext import (
 
 # ===== CONFIG =====
 # Read BOT_TOKEN from environment first, else from .env (python-dotenv)
-BOT_TOKEN = os.environ.get("BOT_TOKEN")
+BOT_TOKEN = os.environ.get("7648577586:AAG10G2khDJyFiQtwhVT7fyhjjo_AX8jFeI")
 if not BOT_TOKEN:
     try:
         from dotenv import load_dotenv
         load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
-        BOT_TOKEN = os.environ.get("BOT_TOKEN")
+        BOT_TOKEN = os.environ.get("7648577586:AAG10G2khDJyFiQtwhVT7fyhjjo_AX8jFeI")
     except Exception:
         pass
 
